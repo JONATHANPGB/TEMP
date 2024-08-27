@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pantalla de Bienvenida</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .splash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8); /* Fondo oscuro con opacidad */
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000; /* Asegúrate de que esté por encima del contenido */
+        }
+        .splash-content {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .close-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #f00;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: not-allowed; /* Botón deshabilitado por defecto */
+            opacity: 0.5; /* Botón deshabilitado por defecto */
+        }
+        .close-button.enabled {
+            cursor: pointer;
+            opacity: 1; /* Botón habilitado */
+        }
+        .countdown {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="splash" class="splash-overlay">
+        <div class="splash-content">
+            <h1>Visión de la Empresa</h1>
+            <p>Bienvenidos a [Nombre de la Empresa]. Nuestra visión es [tu visión aquí].</p>
+            <button id="closeBtn" class="close-button" disabled>Cerrar</button>
+            <div id="countdown" class="countdown"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configura el tiempo durante el cual se debe mostrar la pantalla
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 7); // 7 días a partir de hoy
+
+        // Guarda la fecha de expiración en el almacenamiento local
+        localStorage.setItem('splashExpiration', expirationDate.toISOString());
+
+        // Verifica si la pantalla debe mostrarse
+        function shouldShowSplash() {
+            const storedDate = localStorage.getItem('splashExpiration');
+            if (storedDate) {
+                const expirationDate = new Date(storedDate);
+                if (new Date() > expirationDate) {
+                    // Expirado
+                    localStorage.removeItem('splashExpiration');
+                    return false;
+                }
+                return true;
+            }
+            return true;
+        }
+
+        // Actualiza el temporizador y muestra la cuenta regresiva
+        function updateCountdown() {
+            const countdownElement = document.getElementById('countdown');
+            const now = new Date();
+            const targetDate = new Date(localStorage.getItem('splashExpiration'));
+            const timeRemaining = targetDate - now;
+
+            if (timeRemaining <= 0) {
+                document.getElementById('closeBtn').disabled = false;
+                document.getElementById('closeBtn').classList.add('enabled');
+                countdownElement.textContent = 'El botón de cerrar está ahora habilitado.';
+                return;
+            }
+
+            const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+            countdownElement.textContent = `Tiempo restante para habilitar el botón: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+            setTimeout(updateCountdown, 1000); // Actualiza cada segundo
+        }
+
+        // Muestra u oculta la pantalla informativa
+        if (shouldShowSplash()) {
+            document.getElementById('splash').style.display = 'flex';
+            updateCountdown(); // Inicia la cuenta regresiva
+        } else {
+            document.getElementById('splash').style.display = 'none';
+        }
+
+        // Maneja el evento de cierre del botón
+        document.getElementById('closeBtn').addEventListener('click', function() {
+            document.getElementById('splash').style.display = 'none';
+        });
+
+        // Maneja la confirmación de cierre de la página
+        window.addEventListener('beforeunload', function (e) {
+            if (document.getElementById('splash').style.display !== 'none') {
+                e.preventDefault();
+                e.returnValue = ''; // Mensaje por defecto en algunos navegadores
+            }
+        });
+    </script>
+</body>
+</html>
